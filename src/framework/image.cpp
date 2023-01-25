@@ -322,6 +322,186 @@ void Image::DrawRect(int x, int y, int w, int h, const Color& c)
 	}
 }
 
+// Draws line using DDA algorithm
+void Image::DrawLineDDA(int x0, int y0, int x1, int y1, const Color &c)
+{
+	// Step 1: compute d
+	int dx = x1 - x0;
+	int dy = y1 - y0;
+	int d = std::max(dx, dy);
+	// Step 2: compute direction step vector v
+	Vector2 v = Vector2((float)(dx/d), (float)(dy/d));
+	// Step 3: iteratively increment point by v and draw pixel at each step
+	float x = x0;
+	float y = y0;
+	for (int i = 0; i < d; i++)
+	{
+		SetPixel(std::floor(x), std::floor(y), c);
+		x += v.x;
+		y += v.y;
+	}
+}
+
+// Draws line using Bresenham algorithm
+void Image::DrawLineBresenham(int x0, int y0, int x1, int y1, const Color &c)
+{
+	int dx, dy, move_E, move_NE, d, x, y, step;
+	
+	if(x0 > x1)  // case A.x > B.x: switch points
+	{
+		int tmp = x1;
+		x1 = x0;
+		x0 = tmp;
+		tmp = y1;
+		y1 = y0;
+		y0 = tmp;
+	}
+
+	dx =  x1 - x0;
+	dy = y1 - y0;
+	step = 1;
+
+	// if slope is downward
+	if(dy < 0){
+		step = -1;
+		dy = -dy;
+	}
+	
+	move_E = 2*dy;
+	move_NE = 2*(dy - dx);
+	d = 2*dy - dx;
+	x = x0;
+	y = y0;
+	SetPixel(x, y, c);
+
+	while (x < x1)
+	{	
+		if(d <= 0) // move E
+		{
+			x += 1;
+			d += move_E;
+		}
+		else // move NE
+		{
+			x += 1;
+			y += step;
+			d += move_NE;
+		}
+		SetPixelSafe(x, y, c);
+	}
+}
+
+// Draws circle with Bresenham's algorithm
+void Image::DrawCircle(int x, int y, int r, const Color &c, bool fill)
+{
+	SetPixel(x, y, c);
+	
+	int i, j, v;
+	i = 0;
+	j = r;
+	v = 1 - r;
+	
+	while(j > i)
+	{
+		if (v < 0)
+		{
+			v = v + 2*i + 3;
+			i++;
+		}
+		else {
+			v=v + 2*(i - j) + 5;
+			i++;
+			j--;
+		}
+
+		SetPixel(x + i, y + j, c);		
+		SetPixel(x + j, y + i, c);
+
+		SetPixel((x - j), (y - i), c);
+		SetPixel((x - i), (y - j), c);
+		
+		SetPixel((x + i), (y - j), c);
+		SetPixel((x + j), (y - i), c);
+
+		SetPixel((x - i), (y + j), c);
+		SetPixel((x - j), (y + i), c);
+
+		if(fill)
+		{
+			for (int m = 0; m < j; m++)
+			{
+				for (int n = 0; n < i; n++)
+				{
+					SetPixel(x + j, y + n, c);
+					SetPixel((x - j), (y - n), c);
+					SetPixel((x + j), (y - n), c);
+					SetPixel((x - j), (y + n), c);
+				}
+				SetPixel(x + i, y + m, c);
+				SetPixel((x - i), (y - m), c);
+				SetPixel((x + i), (y - m), c);
+				SetPixel((x - i), (y + m), c);
+			}
+		}
+	}
+}
+
+void Image::DrawImagePixels(const Image& image, int x, int y, bool top)
+{
+    int offset = 0;
+    if(top)
+        offset = y - image.height;
+	for (int x = 0; x < image.width; x++)
+	{
+		for (int y = 0; y < image.height; y++)
+		{
+			Color pixel = image.GetPixel(x, y);
+			SetPixel(x, y + offset, pixel);
+		}
+	}
+}
+    
+ParticleSystem::ParticleSystem()
+{
+
+}
+
+ParticleSystem::ParticleSystem(int n, int width, int height)
+{
+	Vector2 position, direction, velocity;
+	position = Vector2(width/2, height/2);
+	direction = Vector2(10, -100);
+	velocity = Vector2(1, -1);
+	for (int i = 0; i < n; i++)
+	{
+		position.x = std::rand() % width;
+		Particle new_particle = {position, direction, velocity};
+		particles.push_back(new_particle);
+	}
+	
+}
+
+void ParticleSystem::draw(Image& context)
+{
+	for (int i = 0; i < particles.size(); i++)
+	{
+		Vector2 &position = particles[i].position;
+		Vector2 &direction = particles[i].direction;
+		context.DrawLineBresenham(position.x, position.y, position.x + direction.x, position.y + direction.y, Color::WHITE);
+	}
+	//std::cout << std::to_string(particles[0].position.x) << std::endl;
+}
+
+void ParticleSystem::update(float delta)
+{
+	for(int i; i < particles.size(); i++)
+	{
+		Vector2 &current_pos = particles[i].position;
+		current_pos.x += 10;
+	}
+	//std::cout << particles.size() << std::to_string(particles[0].position.x) << std::endl;
+}
+
 #ifndef IGNORE_LAMBDAS
 
 // You can apply and algorithm for two images and store the result in the first one

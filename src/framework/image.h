@@ -19,6 +19,7 @@
 class FloatImage;
 class Entity;
 class Camera;
+class ParticleSystem;
 
 // A matrix of pixels
 class Image
@@ -80,6 +81,12 @@ public:
 
 	void DrawRect(int x, int y, int w, int h, const Color& c);
 
+	// Drawing LAB1
+	void DrawLineDDA(int x0, int y0, int x1, int y1, const Color &c);
+	void DrawLineBresenham(int x0, int y0, int x1, int y1, const Color &c);
+	void DrawCircle(int x, int y, int r, const Color &c, bool fill);
+	void DrawImagePixels(const Image& image, int x, int y, bool top);
+
 	// Used to easy code
 	#ifndef IGNORE_LAMBDAS
 
@@ -124,4 +131,23 @@ public:
 	inline void SetPixel(unsigned int x, unsigned int y, const float& v) { pixels[y * width + x] = v; }
 
 	void Resize(unsigned int width, unsigned int height);
+};
+
+class ParticleSystem
+{
+public:
+	ParticleSystem();
+	ParticleSystem(int n, int width, int height);
+	void draw(Image& context);
+	void update(float delta);
+private:
+	typedef struct Particle
+	{
+		Vector2 position;
+		Vector2 direction;
+		Vector2 velocity;
+	} Particle;
+
+	std::vector<Particle> particles;
+
 };
